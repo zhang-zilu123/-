@@ -1,0 +1,15 @@
+# ProductQuotation 项目依赖包
+
+# 核心依赖
+pandas>=2.0.0
+xlwings>=0.30.0
+
+# 开发依赖
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+
+# 其他依赖
+openpyxl>=3.1.0  # pandas Excel支持
+python-dateutil>=2.8.0  # 日期处理
