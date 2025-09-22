@@ -19,7 +19,6 @@ def load_data_from_excel(excel_path):
         # 读取Excel文件
         df = pd.read_excel(excel_path)
         logger.info(f"成功读取Excel文件: {excel_path}")
-        logger.info(f"数据形状: {df.shape}")
         logger.info(f"表头列名: {df.columns.tolist()}")
         
         # 转换为所需的数据格式
@@ -42,51 +41,6 @@ def load_data_from_excel(excel_path):
         
     except Exception as e:
         logger.error(f"读取Excel文件时出错: {e}")
-        logger.warning("使用默认的模拟数据...")
-        # 返回原来的模拟数据作为备选
-        return get_default_sample_data()
-
-
-def get_default_sample_data():
-    """获取默认的模拟数据"""
-    return [
-        {
-            "商品标题": "猫窝大号四季通用棉编织睡窝舒适耐磨耐抓猫咪睡觉宠物用品",
-            "时间": [["最早上架时间：2025-09-08 16:56:26"], ["最新发布时间：2025-09-17 15:28:44"]],
-            "价格": [["券后¥16.9首件预估到手价"]],
-            "销售": [["年销量", "0件"], ["近30天销量", "0件"]],
-            "商品详情": [["材质", "棉", "产地", "山东"]],
-            "主产品图片": ["https://cbu01.alicdn.com/img/ibank/O1CN01r2tSMW1HHlP9ppoHa_!!3067830733-0-cib.jpg_b.jpg"],
-            "商品详情图片": ["https://cbu01.alicdn.com/img/ibank/O1CN01qoGxxl1HHlKMqn9EN_!!3067830733-0-cib.jpg"],
-            "sku商品详情图片和信息": ["猫窝大号\t974813137215\t5927865081351\t蓝色+大号"],
-            "产品网址": "https://dj.1688.com/ci_bb?a=19394&e=z5DX82J0p4YM5TuKITK3cW1Vcvk68m",
-            "公司基本信息": [["临沂微视角文化传媒有限公司"], ["9年回头率68%"]]
-        },
-        {
-            "商品标题": "宠物用品猫咪玩具",
-            "时间": None,  # 缺失字段
-            "价格": "",    # 空字符串
-            "销售": [],    # 空列表
-            "商品详情": [["材质", "塑料"]],
-            "主产品图片": ["https://example.com/image2.jpg"],
-            "商品详情图片": ["https://example.com/detail2.jpg"],
-            "sku商品详情图片和信息": ["玩具信息"],
-            "产品网址": "https://example.com/product2",
-            "公司基本信息": [["测试公司"]]
-        },
-        {
-            "商品标题": "狗狗食品营养餐",
-            "时间": [["上架时间：2025-09-15"]],
-            "价格": [["价格：¥25.8"]],
-            "销售": [["月销量", "100件"]],
-            "商品详情": [["品牌", "宠物乐园"]],
-            "主产品图片": ["https://example.com/image3.jpg"],
-            "商品详情图片": ["https://example.com/detail3.jpg"],
-            "sku商品详情图片和信息": ["狗粮信息"],
-            "产品网址": "https://example.com/product3",
-            "公司基本信息": None  # 缺失字段
-        }
-    ]
 
 
 def main():

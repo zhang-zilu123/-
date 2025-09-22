@@ -26,6 +26,7 @@ from utils.data_utils import (
     separate_complete_incomplete_data,
     create_validation_summary
 )
+from utils.logger_utils import setup_logger
 
 
 class DataValidator:
@@ -43,7 +44,7 @@ class DataValidator:
         """
         self.required_fields = required_fields or REQUIRED_FIELDS
         self.validation_config = VALIDATION_CONFIG
-        self.logger = self._setup_logger()
+        self.logger = setup_logger(__name__)
         
         # 验证结果存储
         self.validation_results = {
@@ -56,31 +57,7 @@ class DataValidator:
             "validation_report": {}
         }
     
-    def _setup_logger(self) -> logging.Logger:
-        """设置日志记录器"""
-        logger = logging.getLogger(__name__)
-        logger.setLevel(getattr(logging, LOGGING_CONFIG["level"]))
-        
-        # 创建文件处理器
-        os.makedirs(os.path.dirname(LOGGING_CONFIG["file_path"]), exist_ok=True)
-        file_handler = logging.FileHandler(LOGGING_CONFIG["file_path"], encoding='utf-8')
-        file_handler.setLevel(getattr(logging, LOGGING_CONFIG["level"]))
-        
-        # 创建控制台处理器
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(getattr(logging, LOGGING_CONFIG["level"]))
-        
-        # 创建格式器
-        formatter = logging.Formatter(LOGGING_CONFIG["format"])
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
-        
-        # 添加处理器到日志记录器
-        if not logger.handlers:
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
-        
-        return logger    
+
     def validate_required_fields(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         验证必需字段的完整性
@@ -142,6 +119,7 @@ class DataValidator:
         """
         validation_results = self.validate_required_fields(data)
         return validation_results["incomplete_count"] == 0    
+    
     def separate_data(self, data: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """
         分离完整和不完整的数据
@@ -199,7 +177,8 @@ class DataValidator:
         self.validation_results["validation_report"] = report
         
         self.logger.info("验证报告生成完成")
-        return report    
+        return report  
+      
     def save_validation_results(self, output_dir: str = "data/output") -> Dict[str, str]:
         """
         保存验证结果到文件
