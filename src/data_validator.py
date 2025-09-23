@@ -2,9 +2,8 @@
 数据验证模块 - 检查数据完整性，识别缺失字段
 实现第一步：判断每个字段是否为None
 """
-import logging
+
 from typing import List, Dict, Any, Tuple, Optional
-import pandas as pd
 from collections import defaultdict
 import json
 from datetime import datetime
@@ -15,17 +14,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config import REQUIRED_FIELDS, VALIDATION_CONFIG, LOGGING_CONFIG
-from utils.validation_utils import (
-    is_none_or_empty, 
-    check_required_fields, 
-    is_data_complete,
-    get_missing_fields
-)
-from utils.data_utils import (
-    convert_excel_to_dict_list,
-    separate_complete_incomplete_data,
-    create_validation_summary
-)
+
+from utils.validation_utils import get_missing_fields
+
+from utils.data_utils import create_validation_summary
+
 from utils.logger_utils import setup_logger
 
 
@@ -44,7 +37,7 @@ class DataValidator:
         """
         self.required_fields = required_fields or REQUIRED_FIELDS
         self.validation_config = VALIDATION_CONFIG
-        self.logger = setup_logger(__name__)
+        self.logger = setup_logger("step1_data_validator",)
         
         # 验证结果存储
         self.validation_results = {
@@ -53,8 +46,7 @@ class DataValidator:
             "incomplete_count": 0,
             "complete_data": [],
             "incomplete_data": [],
-            "missing_fields_stats": defaultdict(int),
-            "validation_report": {}
+            "missing_fields_stats": {}
         }
     
 
@@ -77,8 +69,7 @@ class DataValidator:
             "incomplete_count": 0,
             "complete_data": [],
             "incomplete_data": [],
-            "missing_fields_stats": defaultdict(int),
-            "validation_report": {}
+            "missing_fields_stats": {}
         }
         
         # 遍历每行数据进行验证
@@ -100,6 +91,8 @@ class DataValidator:
                 
                 # 统计缺失字段
                 for field in missing_fields:
+                    if field not in self.validation_results["missing_fields_stats"]:
+                        self.validation_results["missing_fields_stats"][field] = 0
                     self.validation_results["missing_fields_stats"][field] += 1
         
         self.logger.info(f"验证完成：完整数据 {self.validation_results['complete_count']} 条，"
@@ -143,41 +136,6 @@ class DataValidator:
         
         return complete_data, incomplete_data
     
-    def generate_validation_report(self) -> Dict[str, Any]:
-        """
-        生成验证报告
-        
-        Returns:
-            Dict[str, Any]: 验证报告
-        """
-        if self.validation_results["total_count"] == 0:
-            self.logger.warning("尚未进行数据验证，无法生成报告")
-            return {}
-        
-        # 创建详细的验证报告
-        report = create_validation_summary(
-            total_count=self.validation_results["total_count"],
-            complete_count=self.validation_results["complete_count"],
-            incomplete_count=self.validation_results["incomplete_count"],
-            missing_fields_stats=dict(self.validation_results["missing_fields_stats"])
-        )
-        
-        # 添加额外信息
-        report["必需字段"] = self.required_fields
-        report["验证配置"] = self.validation_config
-        
-        # 计算字段缺失率
-        field_missing_rates = {}
-        for field, missing_count in self.validation_results["missing_fields_stats"].items():
-            missing_rate = (missing_count / self.validation_results["total_count"]) * 100
-            field_missing_rates[field] = f"{missing_rate:.2f}%"
-        
-        report["字段缺失率"] = field_missing_rates
-        
-        self.validation_results["validation_report"] = report
-        
-        self.logger.info("验证报告生成完成")
-        return report  
       
     def save_validation_results(self, output_dir: str = "data/output") -> Dict[str, str]:
         """
@@ -199,7 +157,7 @@ class DataValidator:
         try:
             # 保存完整数据
             if self.validation_results["complete_data"]:
-                complete_file = f"{output_dir}/complete/complete_data_{timestamp}.json"
+                complete_file = f"{output_dir}/step1_data_validator/complete/complete_data_{timestamp}.json"
                 os.makedirs(os.path.dirname(complete_file), exist_ok=True)
                 
                 with open(complete_file, 'w', encoding='utf-8') as f:
@@ -211,7 +169,7 @@ class DataValidator:
             
             # 保存不完整数据
             if self.validation_results["incomplete_data"]:
-                incomplete_file = f"{output_dir}/incomplete/incomplete_data_{timestamp}.json"
+                incomplete_file = f"{output_dir}/step1_data_validator/incomplete/incomplete_data_{timestamp}.json"
                 os.makedirs(os.path.dirname(incomplete_file), exist_ok=True)
                 
                 with open(incomplete_file, 'w', encoding='utf-8') as f:
@@ -220,19 +178,7 @@ class DataValidator:
                 
                 saved_files["incomplete_data"] = incomplete_file
                 self.logger.info(f"不完整数据已保存到: {incomplete_file}")
-            
-            # 保存验证报告
-            if self.validation_results["validation_report"]:
-                report_file = f"{output_dir}/logs/validation_report_{timestamp}.json"
-                os.makedirs(os.path.dirname(report_file), exist_ok=True)
-                
-                with open(report_file, 'w', encoding='utf-8') as f:
-                    json.dump(self.validation_results["validation_report"], f, 
-                             ensure_ascii=False, indent=2)
-                
-                saved_files["validation_report"] = report_file
-                self.logger.info(f"验证报告已保存到: {report_file}")
-        
+               
         except Exception as e:
             self.logger.error(f"保存验证结果时发生错误: {str(e)}")
             raise
@@ -249,19 +195,11 @@ class DataValidator:
         if self.validation_results["total_count"] == 0:
             return "尚未进行数据验证"
         
-        summary = f"""
-数据验证摘要：
-=============
-总数据量: {self.validation_results['total_count']}
-完整数据: {self.validation_results['complete_count']} 条
-不完整数据: {self.validation_results['incomplete_count']} 条
-完整率: {(self.validation_results['complete_count'] / self.validation_results['total_count'] * 100):.2f}%
-
-缺失字段统计:
-"""
-        
-        for field, count in self.validation_results["missing_fields_stats"].items():
-            rate = (count / self.validation_results["total_count"]) * 100
-            summary += f"  {field}: {count} 条 ({rate:.2f}%)\n"
+        summary=create_validation_summary(
+            total_count=self.validation_results["total_count"],
+            complete_count=self.validation_results["complete_count"],
+            incomplete_count=self.validation_results["incomplete_count"],
+            missing_fields_stats=self.validation_results["missing_fields_stats"]
+        )
         
         return summary

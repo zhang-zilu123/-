@@ -48,19 +48,7 @@ def check_required_fields(data_row: Dict[str, Any], required_fields: List[str]) 
     return field_status
 
 
-def is_data_complete(data_row: Dict[str, Any], required_fields: List[str]) -> bool:
-    """
-    判断单行数据是否完整（所有必需字段都不为空）
-    
-    Args:
-        data_row: 单行数据字典
-        required_fields: 必需字段列表
-        
-    Returns:
-        bool: 如果所有必需字段都不为空则返回True
-    """
-    field_status = check_required_fields(data_row, required_fields)
-    return all(field_status.values())
+
 
 
 def get_missing_fields(data_row: Dict[str, Any], required_fields: List[str]) -> List[str]:
