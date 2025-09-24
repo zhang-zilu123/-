@@ -276,7 +276,7 @@ class DataCleaner:
         清洗包装重量数据
         
         输入格式: [['规格\t颜色\t长(cm)\t宽(cm)\t高(cm)\t体积(cm³)\t重量(g)\n大号【直径约50厘米】\t蓝色\t50\t50\t13\t32500\t810\n...']]
-        输出格式: [{"规格": "大号【直径约50厘米】", "颜色": "蓝色", "长(cm)": 50, ...}] 或空字符串
+        输出格式: [{"规格": "大号【直径约50厘米】", "颜色": "蓝色", "长(cm)": "50", ...}] 或空字符串
         """
         if raw_weight is None:
             return ""
@@ -323,14 +323,8 @@ class DataCleaner:
                     header = header.strip()
                     value = values[i].strip() if i < len(values) else ""
                     
-                    # 数值型字段转换为数字
-                    if '(cm)' in header or '(cm³)' in header or '(g)' in header:
-                        try:
-                            row_dict[header] = int(value) if value.isdigit() else value
-                        except ValueError:
-                            row_dict[header] = value
-                    else:
-                        row_dict[header] = value
+                    # 所有字段都保存为字符串格式
+                    row_dict[header] = value
                 
                 if row_dict:
                     result.append(row_dict)
