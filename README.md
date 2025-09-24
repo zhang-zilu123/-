@@ -54,7 +54,8 @@ ProductQuotation/
 │   ├── __init__.py              # 工具包初始化文件
 │   ├── logger_utils.py          # 通用日志工具模块 (已实现)
 │   ├── validation_utils.py      # 数据验证工具函数 (已实现)
-│   └── data_utils.py            # 数据处理工具函数 (已实现)
+│   ├── data_utils.py            # 数据处理工具函数 (已实现)
+│   └── data_splitter_utils.py   # 数据分割工具函数 (已实现)
 ├── config/                       # 配置文件目录
 │   ├── __init__.py              # 配置包初始化文件
 │   └── config.py                # 主配置文件 (已实现)
@@ -63,6 +64,7 @@ ProductQuotation/
 │   ├── output/                  # 输出结果目录
 │   │   ├── complete/           # 完整数据输出
 │   │   ├── incomplete/         # 不完整数据输出
+│   │   ├── split_data/         # 分割数据输出 (自动生成)
 │   │   └── logs/              # 处理日志
 │   └── temp/                   # 临时文件目录
 ├── tests/                       # 测试文件目录
@@ -76,7 +78,7 @@ ProductQuotation/
 │   │   # 后续根据需要添加具体工具函数测试文件
 │   └── test_integration.py    # 集成测试
 ├── requirements.txt             # 依赖包列表 (已配置)
-├── example_usage.py            # 使用示例文件 (已实现)
+├── step1_data_validator.py      # 步骤一数据清洗的使用示例文件 (已实现)
 ├── run_tests.py                # 测试运行脚本
 ├── README.md                   # 项目文档
 └── 数据清洗流程.md              # 业务流程文档
@@ -90,95 +92,217 @@ ProductQuotation/
 **主要类和方法**：
 ```python
 class DataValidator:
-    def __init__(required_fields: Optional[List[str]] = None)
-    def validate_required_fields(data: List[Dict[str, Any]]) -> Dict[str, Any]
-    def check_data_integrity(data: List[Dict[str, Any]]) -> bool
-    def separate_data(data: List[Dict[str, Any]]) -> Tuple[List, List]
-    def get_validation_summary() -> str
-    def generate_validation_report() -> Dict[str, Any]
-    def save_validation_results() -> Dict[str, str]
+    def __init__(self, required_fields: Optional[List[str]] = None):
+        """初始化数据验证器，设置必需字段和日志记录器"""
+        
+    def validate_required_fields(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """验证数据中的必需字段，返回验证结果统计"""
+        
+    def separate_data(self, data: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """分离完整和不完整的数据"""
+        
+    def save_validation_results(self, output_dir: str = "data/output") -> Dict[str, str]:
+        """保存验证结果到JSON文件"""
+        
+    def get_validation_summary(self) -> str:
+        """获取验证结果摘要报告"""
 ```
 
-**关键字段检查**：
-- 商品标题
-- 时间信息  
-- 价格数据
-- 销售数据
-- 商品详情
-- 主产品图片
-- 商品详情图片
-- SKU信息
-- 产品网址
-- 公司基本信息
-
-**特色功能**：
-- 使用通用logger系统记录验证过程
-- 支持自定义必需字段列表
-- 自动生成详细的验证报告
-- 支持数据分离和保存功能
-
-### 2. 通用工具模块 (utils/) ✅ 已实现
-
-#### 2.1 日志工具模块 (logger_utils.py)
-**职责**：提供统一的日志记录功能
+**验证结果存储**：
 ```python
-def setup_logger(name, level, file_path, format_str) -> logging.Logger
-def get_logger(name: Optional[str] = None) -> logging.Logger  
-def set_log_level(logger: logging.Logger, level: str) -> None
+validation_results = {
+    "total_count": 0,        # 总数据条数
+    "complete_count": 0,     # 完整数据条数
+    "incomplete_count": 0,   # 不完整数据条数
+    "complete_data": [],     # 完整数据列表
+    "incomplete_data": [],   # 不完整数据列表
+    "missing_fields_stats": {} # 缺失字段统计
+}
 ```
 
-**特色功能**：
-- 支持自定义日志配置参数
-- 同时输出到文件和控制台
-- 避免重复添加处理器
-- 支持动态调整日志级别
+### 2. 数据清洗模块 (src/data_cleaner.py) ✅ 已实现
 
-#### 2.2 验证工具模块 (validation_utils.py)
-**职责**：提供数据验证相关的工具函数
+**职责**：将完整的原始数据转换为标准化JSON格式
+
+**主要类和方法**：
 ```python
-def is_none_or_empty(value: Any) -> bool
-def check_required_fields(data_row, required_fields) -> Dict[str, bool]
-def is_data_complete(data_row, required_fields) -> bool
-def get_missing_fields(data_row, required_fields) -> List[str]
+class DataCleaner:
+    def __init__(self):
+        """初始化数据清洗器，设置日志记录器和结果存储"""
+        
+    def clean_product_data(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """清洗产品数据，返回清洗结果统计"""
+        
+    def _clean_single_item(self, item: Dict[str, Any], index: int) -> Optional[Dict[str, Any]]:
+        """清洗单个数据项，处理所有字段"""
 ```
 
-#### 2.3 数据处理工具模块 (data_utils.py)
-**职责**：提供数据处理相关的工具函数
+**清洗结果存储**：
 ```python
-def convert_excel_to_dict_list(df: pd.DataFrame) -> List[Dict[str, Any]]
-def separate_complete_incomplete_data(data_list, required_fields) -> Tuple
-def create_validation_summary(validation_results) -> str
+cleaning_results = {
+    "total_count": 0,      # 总数据条数
+    "success_count": 0,    # 成功清洗条数
+    "error_count": 0,      # 清洗失败条数
+    "cleaned_data": [],    # 清洗成功的数据
+    "error_data": [],      # 清洗失败的数据
+    "cleaning_report": {}  # 清洗报告
+}
 ```
 
-### 3. 配置管理模块 (config/config.py) ✅ 已实现
-**职责**：管理系统配置和字段映射
-
-**主要配置**：
+**字段清洗器**：
 ```python
-REQUIRED_FIELDS = [...]              # 必需字段列表
-EXCEL_CONFIG = {...}                 # Excel处理配置
-XLWINGS_SETTINGS = {...}            # xlwings设置
-OUTPUT_SETTINGS = {...}             # 输出设置
-PROCESSING_RULES = {...}            # 处理规则
-VALIDATION_CONFIG = {...}           # 数据验证配置
-LOGGING_CONFIG = {...}              # 日志配置
+field_cleaners = {
+    "商品标题": self._clean_title,
+    "时间": self._clean_time_data,
+    "价格": self._clean_price_data,
+    "销售": self._clean_sales_data,
+    "商品详情": self._clean_product_details,
+    "包装重量": self._clean_package_weight,
+    "主产品图片": self._clean_image_urls,
+    "商品详情图片": self._clean_image_urls,
+    "sku商品详情图片和信息": self._clean_sku_data,
+    "产品网址": self._clean_product_url,
+    "公司基本信息": self._clean_company_info,
+    "公司详情信息": self._clean_company_details
+}
 ```
 
-### 4. 示例程序 (example_usage.py) ✅ 已实现
-**职责**：演示系统使用方法和数据验证流程
+### 3. 工具函数模块 (utils/) ✅ 已实现
+
+#### 3.1 日志工具 (logger_utils.py)
+```python
+def setup_logger(log_name: str, log_dir: str = "logs") -> logging.Logger:
+    """设置日志记录器，支持文件输出"""
+
+def get_logger(name: Optional[str] = None) -> logging.Logger:
+    """获取日志记录器的便捷函数"""
+
+def set_log_level(logger: logging.Logger, level: str) -> None:
+    """设置日志级别"""
+```
+
+#### 3.2 验证工具 (validation_utils.py)
+```python
+def is_none_or_empty(value: Any) -> bool:
+    """检查值是否为None或空值（空字符串、空列表、空字典）"""
+
+def check_required_fields(data_row: Dict[str, Any], required_fields: List[str]) -> Dict[str, bool]:
+    """检查数据行中必需字段的存在情况"""
+
+def get_missing_fields(data_row: Dict[str, Any], required_fields: List[str]) -> List[str]:
+    """获取数据行中缺失的字段列表"""
+```
+
+#### 3.3 数据处理工具 (data_utils.py)
+```python
+def create_validation_summary(
+    total_count: int,
+    complete_count: int, 
+    incomplete_count: int,
+    missing_fields_stats: Dict[str, int]
+) -> Dict[str, Any]:
+    """创建数据验证摘要报告，包含完整性统计和缺失字段统计"""
+```
+
+#### 3.4 数据分割工具 (data_splitter_utils.py) ✅ 已实现
+```python
+def split_json_file(
+    input_file_path: str,
+    output_dir: str = None,
+    chunk_size: int = 1000,
+    create_subdirs: bool = True
+) -> Dict[str, Any]:
+    """将大型JSON文件分割成多个小文件"""
+
+def calculate_split_info(total_count: int, chunk_size: int) -> Dict[str, int]:
+    """计算分割信息"""
+
+def validate_json_file(file_path: str) -> Tuple[bool, str]:
+    """验证JSON文件的有效性"""
+
+def get_split_summary(split_result: Dict[str, Any]) -> str:
+    """生成分割结果摘要"""
+```
 
 **主要功能**：
+- 大型JSON文件分割
+- 可配置分割数量
+- 自动生成输出目录
+- 完整的错误处理和日志记录
+- 分割进度监控
+
+### 4. 程序
+
+#### 4.1 步骤一：数据验证 (step1_data_validator.py)
+
+**主要函数**：
 ```python
-def load_data_from_excel(excel_path) -> List[Dict]
-def get_default_sample_data() -> List[Dict]  
-def main() -> None
+def load_data_from_excel(excel_path):
+    """从Excel文件读取数据并转换为所需格式"""
+
+def split_complete_data_files(saved_files, chunk_size=1000):
+    """对保存的完整数据文件进行分割"""
+
+def main():
+    """主函数 - 演示完整的数据验证流程"""
 ```
 
-**特色功能**：
-- 支持从真实Excel文件读取数据
-- 提供默认示例数据作为备选
-- 完整的数据验证流程演示
-- 集成日志记录功能
+**处理流程**：
+1. 读取输入目录中的所有Excel文件
+2. 转换Excel数据为标准格式
+3. 验证数据完整性
+4. 分离完整和不完整数据
+5. 保存验证结果
+6. **自动数据分割** - 当完整数据量超过1000条时自动分割
+7. 生成验证报告
+
+**数据分割逻辑**：
+- 当完整数据量 > 1000条时，自动触发分割
+- 默认每个文件包含1000条数据
+- 分割文件保存在 `data/output/split_data/` 目录
+- 生成详细的分割报告和文件列表
+
+#### 4.2 步骤二：数据清洗 (step2_data_cleaner.py)
+
+**主要函数**：
+```python
+def find_complete_json_files(complete_dir):
+    """查找complete目录中的所有JSON文件"""
+
+def load_complete_data_from_json(json_path):
+    """从JSON文件读取完整数据"""
+
+def process_single_json_file(json_file_path, output_dir):
+    """处理单个JSON文件的数据清洗"""
+
+def main():
+    """主函数 - 批量处理complete目录中的所有JSON文件"""
+```
+
+**处理流程**：
+1. 查找步骤一生成的完整数据JSON文件
+2. 读取JSON数据
+3. 进行数据清洗和格式转换
+4. 保存清洗后的数据和错误数据
+5. 生成清洗报告和处理统计
+
+### 5. 数据处理流程
+
+```mermaid
+graph TD
+    A[Excel原始数据] --> B[步骤一: 数据验证]
+    B --> C{验证完整性}
+    C -->|完整| D[完整数据JSON]
+    C -->|不完整| E[不完整数据JSON]
+    D --> F{数据量判断}
+    F -->|>1000条| G[自动数据分割]
+    F -->|≤1000条| H[步骤二: 数据清洗]
+    G --> I[分割后的多个JSON文件]
+    I --> H[步骤二: 数据清洗]
+    H --> J{清洗处理}
+    J -->|成功| K[标准化JSON]
+    J -->|失败| L[错误数据JSON]
+```
 
 ## 模块依赖关系
 
@@ -269,7 +393,7 @@ example_usage.py
 ### 4. 价格数据处理
 **输入格式**：
 ```python
-[['券后\n¥\n16\n.9\n\n首件预估到手价\n\n价格\n¥\n17\n.90\n\n1个起批\n\n¥\n16\n.90\n\n10-100个\n\n¥\n15\n.90\n\n≥100个']]
+[['券后\n¥\n22\n.2\n\n首件预估到手价\n\n价格\n¥\n24\n.20\n\n1个起批']]
 ```
 
 **处理逻辑**：
@@ -281,14 +405,7 @@ example_usage.py
 **输出格式**：
 ```json
 {
-  "价格": {
-    "券后": "¥16.9",
-    "首件预估到手价": "¥16.9", 
-    "价格": "¥17.90",
-    "1个起批": "¥16.90",
-    "10-100个": "¥15.90",
-    "≥100个": "¥15.90"
-  }
+  "价格": {"券后¥22.2 首件预估到手价 价格¥24.20 1个起批"}
 }
 ```
 
@@ -378,7 +495,9 @@ example_usage.py
 ### 9. SKU商品详情信息处理
 **输入格式**：
 ```
-猫窝大号四季通用棉编织睡窝舒适耐磨耐抓猫咪睡觉宠物用品	974813137215	5927865081351	蓝色+大号【直径约50厘米】	--	15.9～17.9	--	99
+源头工厂猫狗窝/笼/垫 蓝带深窝圆形保暖毛绒一窝两用防滑垫狗窝	941152283932	6007353210887	40*40*15+圆形窝	--	33	--	1000
+棉麻宠物窝笼用四季通用可拆洗猫狗窝冬季保暖狗垫子狗床宠物用品	971330127246	5923872365733	满天星+S约43*32cm	https://cbu01.alicdn.com/img/ibank/O1CN01RbMzdR2KPxW2awQVs_!!2828429550-0-cib.jpg	8.99	--	1000
+T 跨境宠物猫窝垫狗笼睡窝地垫四季通用趴窝垫子猫狗地垫宠物地垫	827105034330	5721910063309	60*90cm+卡通猫爪子印地毯	https://cbu01.alicdn.com/img/ibank/O1CN01LhX0FS1wrqkmt7frM_!!959296362-0-cib.jpg	10.8	--	19
 ```
 
 **处理逻辑**：
@@ -391,13 +510,24 @@ example_usage.py
 {
   "sku商品详情图片和信息": [
     {
-      "商品标题": "猫窝大号四季通用棉编织睡窝舒适耐磨耐抓猫咪睡觉宠物用品",
-      "商品ID": "974813137215", 
-      "SKU ID": "5927865081351",
-      "颜色+规格": "蓝色+大号【直径约50厘米】",
-      "价格范围": "15.9～17.9",
-      "库存": "99"
-    }
+      "颜色规格": "蓝色+大号【直径约50厘米】",
+      "图片":"",
+      "价格": "15.9～17.9",
+
+    },
+    {
+      "颜色规格": "满天星+S约43*32cm",
+      "图片":"https://cbu01.alicdn.com/img/ibank/O1CN01RbMzdR2KPxW2awQVs_!!2828429550-0-cib.jpg",
+      "价格": "8.99",
+
+    },
+    {
+      "颜色规格": "60*90cm+卡通猫爪子印地毯",
+      "图片":"https://cbu01.alicdn.com/img/ibank/O1CN01LhX0FS1wrqkmt7frM_!!959296362-0-cib.jpg",
+      "价格": "10.8",
+
+    },
+
   ]
 }
 ```
@@ -586,32 +716,10 @@ PROCESSING_RULES = {
 
 ## 开发进度
 
-### ✅ 已完成
-- [x] 项目框架设计
-- [x] 技术文档编写
-- [x] 数据流程分析
-- [x] 字段处理规则定义
-- [x] 配置管理系统 (config/config.py)
-- [x] 通用日志工具模块 (utils/logger_utils.py)
-- [x] 数据验证工具函数 (utils/validation_utils.py)
-- [x] 数据处理工具函数 (utils/data_utils.py)
-- [x] 数据验证器核心模块 (src/data_validator.py)
-- [x] 示例程序和使用演示 (example_usage.py)
-- [x] Excel数据读取集成
-
 ### 🚧 开发中
 - [ ] 数据清洗模块 (src/data_cleaner.py)
 - [ ] 字段处理器集合 (src/field_processors.py)
 - [ ] 文件管理模块 (src/file_manager.py)
-
-### 📋 待开发
-
-- [ ] 单元测试套件 (tests/)
-- [ ] 集成测试套件
-- [ ] 性能优化和基准测试
-- [ ] 错误处理完善
-- [ ] Excel高级功能集成
-- [ ] 实现数据去重功能
 
 
 ## 质量保证
@@ -651,9 +759,7 @@ PROCESSING_RULES = {
 
 ### 监控指标
 - 处理速度（记录/秒）
-- 内存使用量
 - 错误率统计
-- 数据质量评分
 
 ## 贡献指南
 
@@ -681,14 +787,62 @@ PROCESSING_RULES = {
 - 集成xlwings替代openpyxl进行Excel操作
 - 统一配置管理到config/config.py
 
-
 ### v0.2.0 (2025-09-22)
 - **✅ 实现通用日志工具模块** (utils/logger_utils.py)
-- **✅ 实现数据验证工具函数** (utils/validation_utils.py) 
+  - 支持文件和控制台输出
+  - 防止重复添加处理器
+  - 支持动态调整日志级别
+- **✅ 实现数据验证工具函数** (utils/validation_utils.py)
+  - 完整性检查函数
+  - 字段验证函数
+  - 缺失字段统计
 - **✅ 实现数据处理工具函数** (utils/data_utils.py)
+  - 验证摘要报告生成
+  - 数据统计功能
 - **✅ 实现数据验证器核心模块** (src/data_validator.py)
-- **✅ 实现示例程序和Excel数据读取** (example_usage.py)
-- **✅ 重构logger为通用工具函数**，支持项目内所有模块使用
+  - 数据完整性验证
+  - 数据分离功能
+  - 验证结果保存
+  - 验证报告生成
+- **✅ 实现数据清洗器核心模块** (src/data_cleaner.py)
+  - 字段清洗器集合
+  - 数据格式转换
+  - 错误处理机制
+  - 清洗报告生成
+- **✅ 实现示例程序**
+  - step1_data_validator.py - 数据验证示例
+  - step2_data_cleaner.py - 数据清洗示例
+- **✅ 优化日志系统**
+  - 重构为通用工具函数
+  - 支持项目内所有模块使用
+  - 统一日志格式和级别
+- **✅ 完善错误处理**
+  - 添加异常捕获和处理
+  - 详细的错误日志记录
+  - 错误数据分离存储
+
+### v0.2.1 (2025-09-23)
+- **🔄 优化数据验证流程**
+  - 支持批量处理Excel文件
+  - 改进验证结果存储结构
+  - 增强验证报告详细度
+- **🔄 优化数据清洗流程**
+  - 支持批量处理JSON文件
+  - 完善字段清洗器功能
+  - 添加清洗进度统计
+- **🔄 改进文件处理**
+  - 统一文件命名规则
+  - 优化目录结构管理
+  - 自动创建输出目录
+- **✅ 新增数据分割功能**
+  - 实现数据分割工具模块 (utils/data_splitter_utils.py)
+  - 集成到步骤一数据验证流程中
+  - 智能判断数据量，超过1000条自动分割
+  - 可配置分割数量 (默认1000条/文件)
+  - 自动生成 split_data 输出目录
+  - 详细的分割进度和统计报告
+  - 完整的错误处理和日志记录
+
 
 ---
 

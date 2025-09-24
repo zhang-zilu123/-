@@ -597,29 +597,6 @@ class DataCleaner:
     
 
     
-    def convert_to_json(self, indent: Optional[int] = None) -> str:
-        """
-        将清洗结果转换为JSON字符串
-        
-        Args:
-            indent: JSON缩进，如果为None则使用配置中的默认值
-            
-        Returns:
-            str: JSON字符串
-        """
-        indent_value = indent if indent is not None else self.output_settings.get("indent", 2)
-        
-        try:
-            return json.dumps(
-                self.cleaning_results["cleaned_data"],
-                ensure_ascii=False,
-                indent=indent_value
-            )
-        except Exception as e:
-            self.logger.error(f"转换JSON时出错: {e}")
-            return "[]"
-    
-
     
     def save_cleaned_data(self, output_path: str) -> bool:
         """

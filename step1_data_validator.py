@@ -2,7 +2,7 @@
 步骤一：数据验证模块使用示例
 演示如何使用DataValidator进行第一步数据验证
 输入：Excel原始数据文件
-输出：完整数据JSON文件和不完整数据JSON文件
+输出：完整数据JSON文件和不完整数据JSON文件，以及分割后的小文件
 """
 import sys
 import os
@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from src.data_validator import DataValidator
 from utils import setup_logger
+from utils.data_splitter_utils import split_json_file, get_split_summary
 
 def load_data_from_excel(excel_path):
     """从Excel文件读取数据并转换为所需格式"""
@@ -44,6 +45,42 @@ def load_data_from_excel(excel_path):
     except Exception as e:
         logger.error(f"读取Excel文件时出错: {e}")
 
+
+def split_complete_data_files(saved_files, chunk_size=1000):
+    """对保存的完整数据文件进行分割"""
+    logger = setup_logger(log_name="step1_data_validator")
+    
+    # 检查是否有完整数据文件需要分割
+    complete_file = saved_files.get("complete_data")
+    if not complete_file:
+        logger.info("没有完整数据文件需要分割")
+        return
+    
+    logger.info("=== 开始数据分割处理 ===")
+    logger.info(f"5. 分割完整数据文件: {os.path.basename(complete_file)}")
+    
+    try:
+        # 执行分割
+        split_result = split_json_file(
+            input_file_path=complete_file,
+            chunk_size=chunk_size
+        )
+        
+        if split_result["status"] == "success":
+            logger.info("数据分割成功！")
+            logger.info(get_split_summary(split_result))
+            
+            # 显示分割文件列表
+            logger.info("分割文件列表:")
+            for i, split_file in enumerate(split_result["split_files"], 1):
+                filename = os.path.basename(split_file)
+                logger.info(f"  {i}. {filename}")
+                
+        else:
+            logger.error(f"数据分割失败: {split_result.get('error', '未知错误')}")
+            
+    except Exception as e:
+        logger.error(f"分割数据时发生异常: {str(e)}")
 
 
 def main():
@@ -116,12 +153,20 @@ def main():
     logger.info("4. 保存验证结果...")
     saved_files = validator.save_validation_results()
 
+    # 第四步：数据分割（新增）
+    if saved_files and "complete_data" in saved_files:
+        # 判断是否需要分割（数据量大于1000条时进行分割）
+        complete_count = len(complete_data)
+        if complete_count > 1000:
+            logger.info(f"完整数据量较大 ({complete_count} 条)，开始进行数据分割...")
+            split_complete_data_files(saved_files, chunk_size=1000)
+        else:
+            logger.info(f"完整数据量适中 ({complete_count} 条)，无需分割")
 
     # 显示不完整数据的详细信息
     if incomplete_data:
         logger.info(f"不完整数据详情 (共{len(incomplete_data)}条):")
-        for i, item in enumerate(incomplete_data, 1):
-            missing_fields = item.get('_missing_fields', [])
+        
 
     logger.info("=== ProductQuotation 步骤一：数据验证完成 === \n")
     
