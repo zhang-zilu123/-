@@ -13,6 +13,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.data_validator import DataValidator
 from utils import setup_logger
 from utils.data_splitter_utils import split_json_file, get_split_summary
+from config.config import SPLIT_CONFIG
+
 
 def load_data_from_excel(excel_path):
     """从Excel文件读取数据并转换为所需格式"""
@@ -46,7 +48,7 @@ def load_data_from_excel(excel_path):
         logger.error(f"读取Excel文件时出错: {e}")
 
 
-def split_complete_data_files(saved_files, chunk_size=1000):
+def split_complete_data_files(saved_files):
     """对保存的完整数据文件进行分割"""
     logger = setup_logger(log_name="step1_data_validator")
     
@@ -58,12 +60,14 @@ def split_complete_data_files(saved_files, chunk_size=1000):
     
     logger.info("=== 开始数据分割处理 ===")
     logger.info(f"5. 分割完整数据文件: {os.path.basename(complete_file)}")
+    logger.info(f"分割配置: 每个文件 {SPLIT_CONFIG['chunk_size']} 条数据")
     
     try:
-        # 执行分割
+        # 执行分割，使用配置中的参数
         split_result = split_json_file(
             input_file_path=complete_file,
-            chunk_size=chunk_size
+            chunk_size=SPLIT_CONFIG['chunk_size'],
+            create_subdirs=SPLIT_CONFIG['create_subdirs']
         )
         
         if split_result["status"] == "success":
@@ -153,15 +157,22 @@ def main():
     logger.info("4. 保存验证结果...")
     saved_files = validator.save_validation_results()
 
-    # 第四步：数据分割（新增）
-    if saved_files and "complete_data" in saved_files:
-        # 判断是否需要分割（数据量大于1000条时进行分割）
+    # 第四步：数据分割（使用配置文件中的设定）
+    if saved_files and "complete_data" in saved_files and SPLIT_CONFIG['auto_split']:
+        # 判断是否需要分割（数据量大于配置的split_threshold时进行分割）
         complete_count = len(complete_data)
-        if complete_count > 1000:
-            logger.info(f"完整数据量较大 ({complete_count} 条)，开始进行数据分割...")
-            split_complete_data_files(saved_files, chunk_size=1000)
+        chunk_size = SPLIT_CONFIG['chunk_size']
+        split_threshold = SPLIT_CONFIG['split_threshold']
+        
+        if complete_count > split_threshold:
+            logger.info(f"完整数据量较大 ({complete_count} 条)，超过分割阈值 ({split_threshold} 条)，开始进行数据分割...")
+            split_complete_data_files(saved_files)
         else:
-            logger.info(f"完整数据量适中 ({complete_count} 条)，无需分割")
+            logger.info(f"完整数据量适中 ({complete_count} 条)，未超过分割阈值 ({split_threshold} 条)，无需分割")
+    elif not SPLIT_CONFIG['auto_split']:
+        logger.info("自动分割功能已禁用")
+    else:
+        logger.info("没有完整数据文件，跳过分割")
 
     # 显示不完整数据的详细信息
     if incomplete_data:

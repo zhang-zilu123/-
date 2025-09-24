@@ -106,7 +106,7 @@ def main():
     # 第一步：查找complete目录中的所有JSON文件
     logger.info("第一步：查找步骤1生成的完整数据 complete文件夹...")
     
-    complete_dir = r"data\output\step1_data_validator\complete"
+    complete_dir = r"data\output\step1_data_validator\split_data"
     
     if not os.path.exists(complete_dir):
         logger.error(f"错误：complete目录不存在: {complete_dir}")

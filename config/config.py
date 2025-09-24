@@ -64,3 +64,13 @@ LOGGING_CONFIG = {
     "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     "file_path": "data/output/logs/validation.log"
 }
+
+
+# 分割配置
+SPLIT_CONFIG = {
+    "chunk_size": 300,              # 每个分割文件的数据条数
+    "create_subdirs": True,         # 是否创建子目录
+    "split_threshold": 300,         # 分割阈值，超过此数量才进行分割
+    "output_subdir": "split_data",  # 分割文件输出子目录名
+    "auto_split": True              # 是否自动分割
+}

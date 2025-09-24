@@ -257,10 +257,12 @@ def main():
 7. 生成验证报告
 
 **数据分割逻辑**：
-- 当完整数据量 > 1000条时，自动触发分割
-- 默认每个文件包含1000条数据
+- 可通过 `SPLIT_CONFIG['auto_split']` 开关控制是否启用自动分割
+- 当完整数据量超过 `SPLIT_CONFIG['split_threshold']` 条时，自动触发分割
+- 每个分割文件包含 `SPLIT_CONFIG['chunk_size']` 条数据
 - 分割文件保存在 `data/output/split_data/` 目录
 - 生成详细的分割报告和文件列表
+- 支持配置化管理，便于调整分割策略
 
 #### 4.2 步骤二：数据清洗 (step2_data_cleaner.py)
 
@@ -714,6 +716,32 @@ PROCESSING_RULES = {
 }
 ```
 
+#### 6. 数据分割配置
+```python
+SPLIT_CONFIG = {
+    "chunk_size": 300,              # 每个分割文件的数据条数
+    "create_subdirs": True,         # 是否创建子目录
+    "split_threshold": 300,         # 分割阈值，超过此数量才进行分割
+    "output_subdir": "split_data",  # 分割文件输出子目录名
+    "auto_split": True              # 是否自动分割
+}
+```
+
+**配置说明**：
+- `chunk_size`: 控制每个分割文件包含的数据条数，默认300条
+- `create_subdirs`: 是否自动创建输出子目录，建议保持True
+- `split_threshold`: 触发自动分割的数据量阈值，当数据量超过此值时才进行分割
+- `output_subdir`: 分割文件的输出子目录名，默认为"split_data"
+- `auto_split`: 自动分割功能的总开关，设为False可完全禁用分割功能
+
+**使用示例**：
+```python
+# 调整分割策略
+SPLIT_CONFIG["chunk_size"] = 500        # 每个文件500条数据
+SPLIT_CONFIG["split_threshold"] = 1000  # 超过1000条才分割
+SPLIT_CONFIG["auto_split"] = False      # 禁用自动分割
+```
+
 ## 开发进度
 
 ### 🚧 开发中
@@ -842,6 +870,20 @@ PROCESSING_RULES = {
   - 自动生成 split_data 输出目录
   - 详细的分割进度和统计报告
   - 完整的错误处理和日志记录
+
+### v0.2.2 (2025-09-24)
+- **🔧 配置化数据分割功能**
+  - 新增 SPLIT_CONFIG 配置项到 config/config.py
+  - 支持配置分割文件大小 (chunk_size: 300)
+  - 支持配置分割阈值 (split_threshold: 300)  
+  - 新增自动分割开关 (auto_split: True/False)
+  - 可配置输出子目录名 (output_subdir)
+  - 重构 step1_data_validator.py 使用配置化参数
+  - 移除硬编码的分割参数，提升配置灵活性
+- **🔄 优化数据清洗模块**
+  - 修改包装重量数据处理逻辑
+  - 所有数值字段 (长、宽、高、体积、重量) 统一保存为字符串格式
+  - 确保数据类型一致性，避免类型转换问题
 
 
 ---
