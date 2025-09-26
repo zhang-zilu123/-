@@ -74,3 +74,18 @@ SPLIT_CONFIG = {
     "output_subdir": "split_data",  # 分割文件输出子目录名
     "auto_split": True              # 是否自动分割
 }
+
+# 产品属性提取配置
+PRODUCT_ATTRIBUTE_CONFIG = {
+    "output_files": {
+        "complete_file": "step3_complete.json",
+        "error_file": "step3_error.json"
+    },
+    "required_fields": ["规格", "尺寸", "价格", "重量_g", "图片"],
+    "default_values": {
+        "weight": 0,
+        "image": "",
+        "spec": "无规格",
+        "price": 0.0
+    }
+}

@@ -13,7 +13,7 @@ from config.config import LOGGING_CONFIG
 
 def setup_logger(log_name: str, log_dir: str = "logs") -> logging.Logger:
     """
-    设置日志记录器
+    设置日志记录器，同时输出到文件和终端
 
     Args:
         log_name (str): 日志名称
@@ -31,12 +31,20 @@ def setup_logger(log_name: str, log_dir: str = "logs") -> logging.Logger:
 
     # 防止重复添加处理器
     if not logger.handlers:
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        # 创建格式化器
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
+        
+        # 文件处理器
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
+        
+        # 控制台处理器
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
     return logger
 
@@ -56,12 +64,46 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 
 def set_log_level(logger: logging.Logger, level: str) -> None:
     """
-    动态设置日志级别
+    动态设置日志级别，同时控制文件和终端输出
     
     Args:
         logger: 日志记录器
         level: 新的日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
-    logger.setLevel(getattr(logging, level.upper()))
+    log_level = getattr(logging, level.upper())
+    logger.setLevel(log_level)
+    
+    # 同时设置所有处理器的日志级别
     for handler in logger.handlers:
-        handler.setLevel(getattr(logging, level.upper()))
+        handler.setLevel(log_level)
+
+
+def toggle_console_output(logger: logging.Logger, enable: bool = True) -> None:
+    """
+    开启或关闭控制台日志输出
+    
+    Args:
+        logger: 日志记录器
+        enable: True开启控制台输出，False关闭
+    """
+    if enable:
+        # 检查是否已有控制台处理器
+        has_console = any(isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler) 
+                         for h in logger.handlers)
+        if not has_console:
+            console_handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            )
+            console_handler.setFormatter(formatter)
+            console_handler.setLevel(logger.level)
+            logger.addHandler(console_handler)
+    else:
+        # 移除控制台处理器
+        handlers_to_remove = []
+        for handler in logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+                handlers_to_remove.append(handler)
+        
+        for handler in handlers_to_remove:
+            logger.removeHandler(handler)

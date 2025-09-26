@@ -145,15 +145,15 @@ class DataCleaner:
         for field_name, cleaner_func in field_cleaners.items():
             try:
                 raw_value = item.get(field_name)
-                if not is_none_or_empty(raw_value):
-                    # 先尝试解析字符串化的列表数据
-                    parsed_value = self._safe_parse_string_list(raw_value)
-                    cleaned_value = cleaner_func(parsed_value)
-                    if cleaned_value is not None:
-                        cleaned_item[field_name] = cleaned_value
-                    else:
-                        self.logger.warning(f"字段 '{field_name}' 清洗后为空，索引: {index}")
-                else:
+                # 1. 移除原始值空检查，始终执行清洗流程
+                parsed_value = self._safe_parse_string_list(raw_value)
+                cleaned_value = cleaner_func(parsed_value)
+                
+                # 2. 直接添加字段（不再检查 cleaned_value 是否为 None）
+                cleaned_item[field_name] = cleaned_value
+                
+                # 3. 调整日志级别：原始数据为空时仅记录 debug 信息
+                if is_none_or_empty(raw_value):
                     self.logger.warning(f"字段 '{field_name}' 原始数据为空，索引: {index}")
                     
             except Exception as e:
@@ -173,13 +173,13 @@ class DataCleaner:
             if isinstance(raw_title, list) and len(raw_title) > 0:
                 if isinstance(raw_title[0], list) and len(raw_title[0]) > 0:
                     title = str(raw_title[0][0]).strip()
-                    return title if title else None
+                    return title if title else ""
             elif isinstance(raw_title, str):
-                return raw_title.strip() if raw_title.strip() else None
+                return raw_title.strip() if raw_title.strip() else ""
         except Exception:
             pass
         
-        return None
+        return ""
     
     def _clean_time_data(self, raw_time: Any) -> Optional[Dict[str, str]]:
         """
@@ -189,7 +189,7 @@ class DataCleaner:
         输出格式: {"最早上架时间": "2025-09-08 16:56:26", "最新发布时间": "2025-09-17 15:28:44"}
         """
         if not isinstance(raw_time, list):
-            return None
+            return {}
         
         time_dict = {}
         for item in raw_time:
@@ -204,7 +204,7 @@ class DataCleaner:
                         if key and value:
                             time_dict[key] = value
         
-        return time_dict if time_dict else None
+        return time_dict if time_dict else {}
     
     def _clean_price_data(self, raw_price: Any) -> Optional[Dict[str, str]]:
         """
@@ -213,7 +213,7 @@ class DataCleaner:
         - 两个及以上连续 \n 替换为空格
         """
         if not isinstance(raw_price, list) or len(raw_price) == 0:
-            return None
+            return ""
 
         # 取出原始文本（兼容 [[str]] 或 [str] 两种结构）
         first = raw_price[0]
@@ -235,7 +235,7 @@ class DataCleaner:
         输出格式: {"年销量": "0件", "近30天销量": "0件"}
         """
         if not isinstance(raw_sales, list):
-            return None
+            return {}
         
         sales_dict = {}
         for item in raw_sales:
@@ -245,7 +245,7 @@ class DataCleaner:
                 if key and value:
                     sales_dict[key] = value
         
-        return sales_dict if sales_dict else None
+        return sales_dict if sales_dict else {}
     
     def _clean_product_details(self, raw_details: Any) -> Optional[Dict[str, str]]:
         """
@@ -255,7 +255,7 @@ class DataCleaner:
         输出格式: {"材质": "棉", "产地": "山东", "是否进口": "否"}
         """
         if not isinstance(raw_details, list):
-            return None
+            return {}
         
         details_dict = {}
         for item in raw_details:
@@ -269,7 +269,7 @@ class DataCleaner:
                         if key and value and key != "否":
                             details_dict[key] = value
         
-        return details_dict if details_dict else None
+        return details_dict if details_dict else {}
     
     def _clean_package_weight(self, raw_weight: Any) -> List[Dict[str, Union[str, int]]]:
         """
@@ -279,7 +279,7 @@ class DataCleaner:
         输出格式: [{"规格": "大号【直径约50厘米】", "颜色": "蓝色", "长(cm)": "50", ...}] 或空字符串
         """
         if raw_weight is None:
-            return ""
+            return []
         
         try:
             if isinstance(raw_weight, list) and len(raw_weight) > 0:
@@ -288,24 +288,24 @@ class DataCleaner:
                 elif isinstance(raw_weight[0], str):
                     table_str = raw_weight[0].strip()
                 else:
-                    return ""
+                    return []
             elif isinstance(raw_weight, str):
                 table_str = raw_weight.strip()
             else:
-                return ""
+                return []
             
             if not table_str:
-                return ""
+                return []
             
             # 按行分割（处理\r\n和\n）
             lines = table_str.replace('\\n', '\n').split('\n')
             if len(lines) < 2:  # 至少需要表头和一行数据
-                return ""
+                return []
             
             # 第一行为表头
             headers = lines[0].split('\t')
             if not headers:
-                return ""
+                return []
             
             # 解析数据行
             result = []
@@ -329,10 +329,10 @@ class DataCleaner:
                 if row_dict:
                     result.append(row_dict)
             
-            return result if result else ""
+            return result if result else []
         
         except Exception:
-            return ""
+            return []
     
     def _clean_image_urls(self, raw_images: Any) -> Optional[List[str]]:
         """
@@ -347,13 +347,13 @@ class DataCleaner:
                 url = str(item).strip()
                 if url and (url.startswith('http://') or url.startswith('https://')):
                     urls.append(url)
-            return urls if urls else None
+            return urls if urls else []
         elif isinstance(raw_images, str):
             url = raw_images.strip()
             if url and (url.startswith('http://') or url.startswith('https://')):
                 return [url]
         
-        return None
+        return []
     
     def _clean_sku_data(self, raw_sku: Any) -> Optional[List[Dict[str, str]]]:
         """
@@ -371,7 +371,7 @@ class DataCleaner:
         """
 
         if raw_sku is None:
-            return None
+            return {}
 
         sku_items = []
 
@@ -381,7 +381,7 @@ class DataCleaner:
         elif isinstance(raw_sku, list):
             lines = [str(item) for item in raw_sku]
         else:
-            return None
+            return {}
 
         for line in lines:
             line = line.strip()
@@ -401,7 +401,7 @@ class DataCleaner:
                 "价格": price
             })
 
-        return sku_items if sku_items else None
+        return sku_items if sku_items else {}
     
     def _clean_product_url(self, raw_url: Any) -> Optional[str]:
         """
@@ -415,7 +415,7 @@ class DataCleaner:
             if url and (url.startswith('http://') or url.startswith('https://')):
                 return url
         
-        return None
+        return ""
     
     def _clean_company_info(self, raw_company: Any) -> Optional[Dict[str, str]]:
         """
@@ -425,7 +425,7 @@ class DataCleaner:
         输出格式: {"公司名称": "...", "回头率": "...", "成立时间": "...", ...}
         """
         if not isinstance(raw_company, list):
-            return None
+            return {}
         
         company_dict = {}
         
@@ -461,7 +461,7 @@ class DataCleaner:
                     else:
                         company_dict["公司简介"] = content.strip()
         
-        return company_dict if company_dict else None
+        return company_dict if company_dict else {}
     
     def _clean_company_details(self, raw_details: Any) -> Union[Dict[str, str], Dict[str, Dict[str, str]]]:
         """
@@ -472,7 +472,7 @@ class DataCleaner:
         输出格式: 根据内容结构返回相应的字典格式，如果为空则返回空字符串
         """
         if raw_details is None:
-            return ""
+            return []
         
         try:
             if isinstance(raw_details, list) and len(raw_details) > 0:
@@ -481,14 +481,14 @@ class DataCleaner:
                 elif isinstance(raw_details[0], str):
                     details_str = raw_details[0].strip()
                 else:
-                    return ""
+                    return []
             elif isinstance(raw_details, str):
                 details_str = raw_details.strip()
             else:
-                return ""
+                return []
             
             if not details_str:
-                return ""
+                return []
             
             # 清理换行符
             details_str = details_str.replace('\\n', '\n')
@@ -497,7 +497,7 @@ class DataCleaner:
             parts = [part.strip() for part in details_str.split('\n') if part.strip()]
             
             if not parts:
-                return ""
+                return []
             
             # 情况1：开头为"经营模式"（简单键值对结构）
             if parts[0] == "经营模式":
@@ -508,7 +508,7 @@ class DataCleaner:
                         value = parts[i + 1].strip()
                         if key and value:
                             result[key] = value
-                return result if result else ""
+                return result if result else []
             
             # 情况2：开头为"基本信息"（三层结构）
             elif parts[0] == "基本信息":
@@ -542,7 +542,7 @@ class DataCleaner:
                         else:
                             i += 1
                 
-                return result if result else ""
+                return result if result else []
             
             # 其他情况：尝试简单的键值对解析
             else:
@@ -553,10 +553,10 @@ class DataCleaner:
                         value = parts[i + 1].strip()
                         if key and value:
                             result[key] = value
-                return result if result else ""
+                return result if result else []
         
         except Exception:
-            return ""
+            return []
     
     def _handle_cleaning_error(self, item: Dict[str, Any], index: int, error_msg: str):
         """
